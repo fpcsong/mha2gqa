@@ -1,0 +1,37 @@
+max_seq_len: 4096
+root_path: /data/songxiaohui/work
+name : deepseek-llm-7b-base
+model:
+  name: ${name}
+  path: ${root_path}/models/${name}
+  init_device: "cpu" 
+  tokenizer_name: ${root_path}/models/${name}
+  d_model: 4096
+  n_heads: 32
+  n_kv_heads: 32
+  n_layers: 30
+  intermediate_size: 11008
+  max_seq_len: ${max_seq_len}
+  vocab_size: 102400
+  init_std: 0.02
+  attn_pdrop: 0.0
+  resid_pdrop: 0.0
+  emb_pdrop: 0.0
+  rms_norm_eps: 1e-5
+  l0_module:
+    start_sparsity: 0.0
+    target_sparsity: 0.43
+    alpha: 1e-4
+    sparsity_pool: 0.1
+    pruning_modules: ["head", "intermediate", "head_layer", "hidden"]
+    sft_steps: 0
+    lagrangian_warmup_steps: 0
+    max_prune_steps: 0
+    eval_target_model: True
+    target_model:
+      d_model: 1536
+      n_layers: 14
+      n_heads: 12
+      n_kv_heads: 12
+      intermediate_size: 2048
+      vocab_size: 102400

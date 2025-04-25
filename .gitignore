@@ -1,0 +1,9 @@
+__pycache__/
+temp/
+*.log
+distilresults/
+output.xlsx
+output.csv
+.ipynb_checkpoints/
+fp16_results.jsonl
+quant-4bit_results.jsonl

@@ -1,0 +1,7 @@
+{
+    "description": "prompt for siqa dataset",
+    "prompt_input":  "{context}\nQuestion: {question}?\nChoices: ['{answerA}', '{answerB}', '{answerC}']\nAnswer:",
+    "response_split": "",
+    "label_key": "answer",
+    "task_name": "siqa"
+}

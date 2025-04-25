@@ -1,0 +1,37 @@
+max_seq_len: 4096
+root_path: /data/songxiaohui/work
+name : llama-2-7b-hf
+model:
+  name: ${name}
+  path: ${root_path}/models/${name}
+  init_device: "cpu" 
+  tokenizer_name: ${root_path}/models/${name}
+  d_model: 4096
+  n_heads: 32
+  n_kv_heads: 32
+  n_layers: 32
+  intermediate_size: 11008
+  max_seq_len: ${max_seq_len}
+  vocab_size: 32000
+  init_std: 0.02
+  attn_pdrop: 0.0
+  resid_pdrop: 0.0
+  emb_pdrop: 0.0
+  rms_norm_eps: 1e-5
+  l0_module:
+    start_sparsity: 0.0
+    target_sparsity: 0.43
+    alpha: 1e-4
+    sparsity_pool: 0.1
+    pruning_modules: ["kv_head"]
+    sft_steps: 0
+    lagrangian_warmup_steps: 0
+    max_prune_steps: 0
+    eval_target_model: True
+    target_model:
+      d_model: 4096
+      n_layers: 32
+      n_heads: 32
+      n_kv_heads: 16
+      intermediate_size: 11008
+      vocab_size: 32000
