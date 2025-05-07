@@ -162,15 +162,15 @@ def main(args):
                 model.base_model.model.init_l0_module(l0_config.model)
                 model.base_model.model.model.l0_module.train()
                 model.base_model.model.load_l0_parameters(args.model_path)
-            else:
+            else:#here
                 model.init_l0_module(l0_config.model)
                 model.model.l0_module.train()
-                model.load_l0_parameters(args.model_path)
+                #model.load_l0_parameters(args.model_path)
             model.train()
-            if 'hidden' in l0_config.model.l0_module.pruning_modules:
-                args.do_mid_distil = False
-                CONFIG['do_mid_distil'] = False
-                print0('setting `do_mid_distil` to False...')
+            # if 'hidden' in l0_config.model.l0_module.pruning_modules:
+            #     args.do_mid_distil = False
+            #     CONFIG['do_mid_distil'] = False
+            #     print0('setting `do_mid_distil` to False...')
             for pruning_module in l0_config.model.l0_module.pruning_modules:
                 model.model.l0_module.masks[pruning_module].temperature = args.lag_temperature
         model = model.to(model_dtype)
@@ -287,7 +287,7 @@ def main(args):
     
 
     if training_flags:
-        training_ds_config = get_train_ds_config()
+        training_ds_config = get_train_ds_config(
             offload=args.offload,
             stage=args.stage,
             enable_hybrid_engine=False,

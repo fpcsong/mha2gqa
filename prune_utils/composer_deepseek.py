@@ -1450,36 +1450,36 @@ class DeepSeekForL0Prune(LlamaPreTrainedModel):
         self.config.architectures[0] = 'LlamaForCausalLM'
         self.config.save_pretrained(path)
 
-    def load_l0_parameters(self, path):
-        # l0_config
-        l0_config_path = os.path.join(path, 'l0_config.yaml')
-        if not os.path.exists(l0_config_path):
-            print0('There is no l0 config file')
-            return
-        l0_cfg = om.load(l0_config_path)
-        self.init_l0_module(l0_config=l0_cfg.model)
-        # bins 
-        l0_state_dict = OrderedDict()
-        param_file_format = 'bin'
-        param_files = glob(path+'/*model*.bin')
-        if not param_files:
-            param_files = glob(path+'/*model*.safetensors')
-            param_file_format = 'safetensors'
-            # safe tensors
-        for param_file in param_files:
-            if param_file_format == 'bin':
-                params = torch.load(param_file)
-            else:
-                params = load_file(param_file)
-            for param in tqdm(params):
-                if 'l0_module' in param:
-                    new_param = param.replace('model.l0_module.', '')
-                    l0_state_dict.update({new_param: params.get(param)})
-                if 'kv_layer' in param:
-                    self.load_state_dict(params, strict=False)
-        # print0(l0_state_dict)
-        self.model.l0_module.load_state_dict(l0_state_dict)
-        print0('L0 parameters loaded.')
+    # def load_l0_parameters(self, path):
+    #     # l0_config
+    #     l0_config_path = os.path.join(path, 'l0_config.yaml')
+    #     if not os.path.exists(l0_config_path):
+    #         print0('There is no l0 config file')
+    #         return
+    #     l0_cfg = om.load(l0_config_path)
+    #     self.init_l0_module(l0_config=l0_cfg.model)
+    #     # bins 
+    #     l0_state_dict = OrderedDict()
+    #     param_file_format = 'bin'
+    #     param_files = glob(path+'/*model*.bin')
+    #     if not param_files:
+    #         param_files = glob(path+'/*model*.safetensors')
+    #         param_file_format = 'safetensors'
+    #         # safe tensors
+    #     for param_file in param_files:
+    #         if param_file_format == 'bin':
+    #             params = torch.load(param_file)
+    #         else:
+    #             params = load_file(param_file)
+    #         for param in tqdm(params):
+    #             if 'l0_module' in param:
+    #                 new_param = param.replace('model.l0_module.', '')
+    #                 l0_state_dict.update({new_param: params.get(param)})
+    #             if 'kv_layer' in param:
+    #                 self.load_state_dict(params, strict=False)
+    #     # print0(l0_state_dict)
+    #     self.model.l0_module.load_state_dict(l0_state_dict)
+    #     print0('L0 parameters loaded.')
     
     @classmethod
     def from_pretrained(
@@ -1517,72 +1517,72 @@ class DeepSeekForL0Prune(LlamaPreTrainedModel):
         else:
             model_kwargs = kwargs
         
-        if hasattr(config, "quantization_config") and config.quantization_config['load_in_4bit']:
-            try:
-                from .quantizer import init_model_weight_int4
-                from accelerate import init_empty_weights, dispatch_model, infer_auto_device_map
-                from accelerate.utils import CustomDtype
-                from accelerate.utils import get_balanced_memory
-            except ImportError:
-                raise ImportError(f"Needs import model weight init func to run quantize.") 
-            # Instantiate model.
-            init_contexts = [no_init_weights(_enable=True)]
-            init_contexts.append(init_empty_weights())
-            with ContextManagers(init_contexts):
-                model = cls(config)
+        # if hasattr(config, "quantization_config") and config.quantization_config['load_in_4bit']:
+        #     try:
+        #         from .quantizer import init_model_weight_int4
+        #         from accelerate import init_empty_weights, dispatch_model, infer_auto_device_map
+        #         from accelerate.utils import CustomDtype
+        #         from accelerate.utils import get_balanced_memory
+        #     except ImportError:
+        #         raise ImportError(f"Needs import model weight init func to run quantize.") 
+        #     # Instantiate model.
+        #     init_contexts = [no_init_weights(_enable=True)]
+        #     init_contexts.append(init_empty_weights())
+        #     with ContextManagers(init_contexts):
+        #         model = cls(config)
             
-            model_file = os.path.join(pretrained_model_name_or_path, 'pytorch_model.bin')
-            state_dict = torch.load(model_file, map_location="cpu") 
-            model.is_quantized = True
+        #     model_file = os.path.join(pretrained_model_name_or_path, 'pytorch_model.bin')
+        #     state_dict = torch.load(model_file, map_location="cpu") 
+        #     model.is_quantized = True
             
-            device_map = kwargs.pop("device_map", None)
-            torch_dtype = kwargs.pop("torch_dtype", None)
+        #     device_map = kwargs.pop("device_map", None)
+        #     torch_dtype = kwargs.pop("torch_dtype", None)
             
-            if device_map is not None:
-                kwargs = {"no_split_module_classes": model._no_split_modules}
-                target_dtype = CustomDtype.INT4
-                max_memory = get_balanced_memory(
-                    model,
-                    dtype=target_dtype,
-                    low_zero=(device_map == "balanced_low_0"),
-                    max_memory=None,
-                    **kwargs,
-                )
-                kwargs["max_memory"] = max_memory
-                device_map = infer_auto_device_map(model, dtype=target_dtype, **kwargs)
+        #     if device_map is not None:
+        #         kwargs = {"no_split_module_classes": model._no_split_modules}
+        #         target_dtype = CustomDtype.INT4
+        #         max_memory = get_balanced_memory(
+        #             model,
+        #             dtype=target_dtype,
+        #             low_zero=(device_map == "balanced_low_0"),
+        #             max_memory=None,
+        #             **kwargs,
+        #         )
+        #         kwargs["max_memory"] = max_memory
+        #         device_map = infer_auto_device_map(model, dtype=target_dtype, **kwargs)
                 
-            model = init_model_weight_int4(config, model, state_dict)
+        #     model = init_model_weight_int4(config, model, state_dict)
             
-            # Set model in evaluation mode to deactivate DropOut modules by default
-            model.eval()
-            # If it is a model with generation capabilities, attempt to load the generation config
-            if model.can_generate():
-                try:
-                    model.generation_config = GenerationConfig.from_pretrained(
-                        pretrained_model_name_or_path,
-                        cache_dir=cache_dir,
-                        force_download=force_download,
-                        resume_download=False,
-                        proxies=None,
-                        local_files_only=local_files_only,
-                        token=token,
-                        revision=revision,
-                        subfolder="",
-                        _from_auto=False,
-                        _from_pipeline=None,
-                        **kwargs,
-                    )
-                except (OSError, TypeError):
-                    logger.info(
-                        "Generation config file not found, using a generation config created from the model config."
-                    )
-                    pass
+        #     # Set model in evaluation mode to deactivate DropOut modules by default
+        #     model.eval()
+        #     # If it is a model with generation capabilities, attempt to load the generation config
+        #     if model.can_generate():
+        #         try:
+        #             model.generation_config = GenerationConfig.from_pretrained(
+        #                 pretrained_model_name_or_path,
+        #                 cache_dir=cache_dir,
+        #                 force_download=force_download,
+        #                 resume_download=False,
+        #                 proxies=None,
+        #                 local_files_only=local_files_only,
+        #                 token=token,
+        #                 revision=revision,
+        #                 subfolder="",
+        #                 _from_auto=False,
+        #                 _from_pipeline=None,
+        #                 **kwargs,
+        #             )
+        #         except (OSError, TypeError):
+        #             logger.info(
+        #                 "Generation config file not found, using a generation config created from the model config."
+        #             )
+        #             pass
             
-            if device_map is not None:
-                dispatch_model(model, device_map=device_map)
+        #     if device_map is not None:
+        #         dispatch_model(model, device_map=device_map)
             
-            return model
-        return super(DeepSeekForL0Prune, cls).from_pretrained(pretrained_model_name_or_path, *model_args, 
+        #     return model
+        return super(DeepSeekForL0Prune, cls).from_pretrained(pretrained_model_name_or_path, *model_args, device_map="auto",
                 config=config, cache_dir=cache_dir, ignore_mismatched_sizes=ignore_mismatched_sizes, 
                 force_download=force_download, local_files_only=local_files_only, token=token, revision=revision, 
                 use_safetensors=use_safetensors, **kwargs)   
