@@ -14,7 +14,6 @@ import functools
 import deepspeed
 import logging
 import jsonlines
-from ignite.metrics import Rouge
 import glob
 import copy
 import time
@@ -51,7 +50,6 @@ from transformers import (
     Seq2SeqTrainer,
     BitsAndBytesConfig
 )
-from peft import PeftModel
 
 # from optimum.bettertransformer import BetterTransformer
 from scipy.optimize import curve_fit

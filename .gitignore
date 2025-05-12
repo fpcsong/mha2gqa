@@ -7,3 +7,5 @@ output.csv
 .ipynb_checkpoints/
 fp16_results.jsonl
 quant-4bit_results.jsonl
+results
+nohup.out

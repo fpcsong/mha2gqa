@@ -189,13 +189,13 @@ def evaluate(args, model, evalset, all_metrics, training_flags=False):
         model = torch.compile(model)
     
     world_size = int(os.environ.get("WORLD_SIZE", 1))
-    ds_quant_config = deepspeed.inference.config.QuantizationConfig()
-    ds_quant_config.enabled = True
-    ds_quant_config.activation.q_groups = 1
-    ds_quant_config.activation.q_type = 'asymmetric'
-    ds_quant_config.activation.num_bits = 16
-    ds_quant_config.weight.num_bits = 8
-    ds_quant_config.weight.q_type = 'asymmetric'
+    # ds_quant_config = deepspeed.inference.config.QuantizationConfig()
+    # ds_quant_config.enabled = True
+    # ds_quant_config.activation.q_groups = 1
+    # ds_quant_config.activation.q_type = 'asymmetric'
+    # ds_quant_config.activation.num_bits = 16
+    # ds_quant_config.weight.num_bits = 8
+    # ds_quant_config.weight.q_type = 'asymmetric'
 
     ds_config = {
         "replace_with_kernel_inject": True,
@@ -214,7 +214,7 @@ def evaluate(args, model, evalset, all_metrics, training_flags=False):
         model = ds_engine.module
     elif not args.deepspeed:
         model.to('cuda:0')
-    
+        print('cuda:0')
     def add_label_length(example):
         example['label_length'] = len(example['labels'])
         return example

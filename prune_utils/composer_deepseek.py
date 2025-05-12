@@ -58,7 +58,7 @@ from transformers.modeling_attn_mask_utils import (
 )
 from transformers import LlamaConfig
 from glob import glob
-from omegaconf import OmegaConf as om
+# from omegaconf import OmegaConf as om
 from collections import OrderedDict
 from safetensors.torch import load_file
 
@@ -1582,7 +1582,7 @@ class DeepSeekForL0Prune(LlamaPreTrainedModel):
         #         dispatch_model(model, device_map=device_map)
             
         #     return model
-        return super(DeepSeekForL0Prune, cls).from_pretrained(pretrained_model_name_or_path, *model_args, device_map="auto",
+        return super(DeepSeekForL0Prune, cls).from_pretrained(pretrained_model_name_or_path, *model_args, device_map=None,
                 config=config, cache_dir=cache_dir, ignore_mismatched_sizes=ignore_mismatched_sizes, 
                 force_download=force_download, local_files_only=local_files_only, token=token, revision=revision, 
                 use_safetensors=use_safetensors, **kwargs)   

@@ -158,13 +158,13 @@ def main(args):
             if args.max_steps > 0:
                 l0_config.model.l0_module.lagrangian_warmup_steps = int(args.max_steps * args.lagrangian_warmup_ratio)
                 l0_config.model.l0_module.max_prune_steps = int(args.max_steps * args.prune_step_ratio)
-            if isinstance(model, PeftModel):
-                model.base_model.model.init_l0_module(l0_config.model)
-                model.base_model.model.model.l0_module.train()
-                model.base_model.model.load_l0_parameters(args.model_path)
-            else:#here
-                model.init_l0_module(l0_config.model)
-                model.model.l0_module.train()
+            # if isinstance(model, PeftModel):
+            #     model.base_model.model.init_l0_module(l0_config.model)
+            #     model.base_model.model.model.l0_module.train()
+            #     model.base_model.model.load_l0_parameters(args.model_path)
+            # else:#here
+            model.init_l0_module(l0_config.model)
+            model.model.l0_module.train()
                 #model.load_l0_parameters(args.model_path)
             model.train()
             # if 'hidden' in l0_config.model.l0_module.pruning_modules:

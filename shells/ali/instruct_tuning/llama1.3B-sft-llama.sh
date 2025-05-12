@@ -6,17 +6,18 @@ export HF_HOME=$ROOT_PATH/cache
 MODEL='Sheared-LLaMA-1.3B'
 MODEL_NAME='llama'
 TOKENIZER_NAME='llama'
-DESC='teachers'
+DESC='teachers3epoch'
 BSZ=128
 MXTP=2306
 MBSZ=4
 OUTDIR=./results/sft/$MODEL/$DESC
-BASEMODEL=$ROOT_PATH/models/$MODEL
+BASEMODEL=/workspace/Sheared-LLaMA-1.3B
 BENCHMARK_PATH=./benchmarking/datasets
 TRAINDATA=$BENCHMARK_PATH
 EVALDATA=$BENCHMARK_PATH
 sudo mkdir -p $OUTDIR
-
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
 deepspeed --num_gpus 8 benchmark.py \
     -it \
     -t_data $TRAINDATA \
