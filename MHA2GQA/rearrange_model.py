@@ -290,8 +290,8 @@ def rearrange_model(model_class,num_group,new_model_path,order_file=None):
         value_weight = decoder_layer.self_attn.v_proj.weight.clone()
         output_weight = decoder_layer.self_attn.o_proj.weight.clone()
         
-        calibration_value=torch.load('/mnt/data/JinQingyun/llm-workspace-tra/calibration_data/llama-benchmark-layer'+str(idx)+'-value.pt', map_location=map_location).to(torch.float64)
-        calibration_key=torch.load('/mnt/data/JinQingyun/llm-workspace-tra/calibration_data/llama-benchmark-layer'+str(idx)+'-key.pt', map_location=map_location).to(torch.float64)
+        calibration_value=torch.load(args.calibration_data_path+'/layer'+str(idx)+'-value.pt', map_location=map_location).to(torch.float64)
+        calibration_key=torch.load(args.calibration_data_path+'/layer'+str(idx)+'-key.pt', map_location=map_location).to(torch.float64)
         if standard=='cos':#normalization
             print("use_norm!")
             calibration_value=calibration_value/calibration_value.norm(dim=-1,keepdim=True)
@@ -338,22 +338,23 @@ def rearrange_model(model_class,num_group,new_model_path,order_file=None):
     print("matrix transformation ends!")
 
 parser = argparse.ArgumentParser(description='model transformation')
-
-parser.add_argument('--model_path', type=str, required=True, help='original model path')
-parser.add_argument('--output_model_path', type=str, required=True,help='output model path')
-parser.add_argument('--group_criterion', type=str, required=True, help='dist or cos')
-parser.add_argument('--group_num', type=int, required=True, help='group number of GQA')
-parser.add_argument('--item', type=str, help='key or value')
+parser.add_argument('--model_name', type=str, default='LLaMA-1.3B', help='original model path')
+parser.add_argument('--model_path', type=str, default='/workspace/Sheared-LLaMA-1.3B', help='original model path')
+parser.add_argument('--calibration_data_path', type=str, default='/workspace/mha2gqa/calibration_data', help='original model path')
+parser.add_argument('--output_model_path', type=str, default='/workspace',help='output model path')
+parser.add_argument('--group_criterion', type=str, default='dist', help='dist or cos')
+parser.add_argument('--group_num', type=int, default=8, help='group number of GQA')
+parser.add_argument('--item', type=str,default='value', help='key, value or none')
 parser.add_argument('--order_file', type=str,help='if you already have an order file')
 args = parser.parse_args()
 
 standard=args.group_criterion#'cos'# ''dist'#
 group=args.group_num  #'8'#'16'# 
-order_file=args.order_file#"/mnt/data/JinQingyun/models/contrast/llama-2-4groups-mse-key/my_list.json"
+order_file=args.order_file
 item=args.item #'value'#'none'# or 'key'#
 
 model_name = args.model_path #"/mnt/data/JinQingyun/models/llama-2-7b-hf"
-new_model_path=args.output_model_path #"/mnt/data/JinQingyun/models/contrast/llama-2-"+group+"groups-"+standard+'-'+item
+new_model_path=args.output_model_path+"/"+args.model_name+"-groups-"+str(group)+'-'+standard+'-'+item #"/mnt/data/JinQingyun/models/contrast/llama-2-"+group+"groups-"+standard+'-'+item
 
 model = AutoModelForCausalLM.from_pretrained(model_name).to(map_location)
 print(new_model_path)

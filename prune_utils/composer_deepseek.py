@@ -58,7 +58,7 @@ from transformers.modeling_attn_mask_utils import (
 )
 from transformers import LlamaConfig
 from glob import glob
-# from omegaconf import OmegaConf as om
+from omegaconf import OmegaConf as om
 from collections import OrderedDict
 from safetensors.torch import load_file
 
@@ -1450,36 +1450,36 @@ class DeepSeekForL0Prune(LlamaPreTrainedModel):
         self.config.architectures[0] = 'LlamaForCausalLM'
         self.config.save_pretrained(path)
 
-    # def load_l0_parameters(self, path):
-    #     # l0_config
-    #     l0_config_path = os.path.join(path, 'l0_config.yaml')
-    #     if not os.path.exists(l0_config_path):
-    #         print0('There is no l0 config file')
-    #         return
-    #     l0_cfg = om.load(l0_config_path)
-    #     self.init_l0_module(l0_config=l0_cfg.model)
-    #     # bins 
-    #     l0_state_dict = OrderedDict()
-    #     param_file_format = 'bin'
-    #     param_files = glob(path+'/*model*.bin')
-    #     if not param_files:
-    #         param_files = glob(path+'/*model*.safetensors')
-    #         param_file_format = 'safetensors'
-    #         # safe tensors
-    #     for param_file in param_files:
-    #         if param_file_format == 'bin':
-    #             params = torch.load(param_file)
-    #         else:
-    #             params = load_file(param_file)
-    #         for param in tqdm(params):
-    #             if 'l0_module' in param:
-    #                 new_param = param.replace('model.l0_module.', '')
-    #                 l0_state_dict.update({new_param: params.get(param)})
-    #             if 'kv_layer' in param:
-    #                 self.load_state_dict(params, strict=False)
-    #     # print0(l0_state_dict)
-    #     self.model.l0_module.load_state_dict(l0_state_dict)
-    #     print0('L0 parameters loaded.')
+    def load_l0_parameters(self, path):
+        # l0_config
+        l0_config_path = os.path.join(path, 'l0_config.yaml')
+        if not os.path.exists(l0_config_path):
+            print0('There is no l0 config file')
+            return
+        l0_cfg = om.load(l0_config_path)
+        self.init_l0_module(l0_config=l0_cfg.model)
+        # bins 
+        l0_state_dict = OrderedDict()
+        param_file_format = 'bin'
+        param_files = glob(path+'/*model*.bin')
+        if not param_files:
+            param_files = glob(path+'/*model*.safetensors')
+            param_file_format = 'safetensors'
+            # safe tensors
+        for param_file in param_files:
+            if param_file_format == 'bin':
+                params = torch.load(param_file)
+            else:
+                params = load_file(param_file)
+            for param in tqdm(params):
+                if 'l0_module' in param:
+                    new_param = param.replace('model.l0_module.', '')
+                    l0_state_dict.update({new_param: params.get(param)})
+                if 'kv_layer' in param:
+                    self.load_state_dict(params, strict=False)
+        # print0(l0_state_dict)
+        self.model.l0_module.load_state_dict(l0_state_dict)
+        print0('L0 parameters loaded.')
     
     @classmethod
     def from_pretrained(

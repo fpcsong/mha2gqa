@@ -165,7 +165,7 @@ def main(args):
             # else:#here
             model.init_l0_module(l0_config.model)
             model.model.l0_module.train()
-                #model.load_l0_parameters(args.model_path)
+            model.load_l0_parameters(args.model_path)
             model.train()
             # if 'hidden' in l0_config.model.l0_module.pruning_modules:
             #     args.do_mid_distil = False

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-ROOT_PATH=/mnt/data/JinQingyun
+ROOT_PATH=/workspace
 export HF_HOME=$ROOT_PATH/cache
 export NCCL_DEBUG=WARN
 MODEL=Sheared-LLaMA-1.3B
