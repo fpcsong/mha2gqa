@@ -11,3 +11,4 @@ pytorch_ignite==0.4.13
 sentencepiece==0.1.99
 tqdm==4.66.1
 transformers==4.51.3
+omegaconf==2.3.0

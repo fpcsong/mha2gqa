@@ -143,8 +143,8 @@ if __name__ == '__main__':
     #                     default=CONFIG['batch_size'], help='global batch size')
     parser.add_argument('-bf16', '--bf16', type=bool,default=True)
     parser.add_argument('--model_path', type=str,default='/workspace/Sheared-LLaMA-1.3B')
-    parser.add_argument('--dataset_path', type=str,default='/workspace/c4-train.00000-of-01024.jsonl')
-    parser.add_argument('--save_path', type=str,default='/workspace/mha2gqa/calibration_data')   
+    parser.add_argument('--dataset_path', type=str,default='benchmarking/c4-train.00000-of-01024.jsonl')
+    parser.add_argument('--save_path', type=str,default='/workspace/calibration_data')   
     parser.add_argument('--batch_size', type=int,default=8)
     parser.add_argument('--calibration_max_length', type=int,default=128)
     
