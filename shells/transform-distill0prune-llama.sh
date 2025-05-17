@@ -112,8 +112,6 @@ OUTDIR=$ROOT_PATH/results/l0prune/distil/$BASEAFTER/$DESC
 mkdir -p $OUTDIR
 rm -rf $OUTDIR/*
 
-export NCCL_P2P_DISABLE="1"
-export NCCL_IB_DISABLE="1"
 # accelerate launch train.py \
 deepspeed --num_gpus 8 train.py \
     -it \
@@ -172,8 +170,8 @@ do
         -e_bsz 2 \
         -max_len 2048 \
         --template_name none \
-        --val_files_pattern '/*/eval/*.jsonl' \
-        --train_files_pattern  '/*/train/*.jsonl' \
+        --val_files_pattern '/*/eval/input*.jsonl' \
+        --train_files_pattern  '/*/train/input*.jsonl' \
         --eval_vllm \
         -output
     fi

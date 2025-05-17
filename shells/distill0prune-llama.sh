@@ -141,8 +141,8 @@ do
         -e_bsz 2 \
         -max_len 2048 \
         --template_name none \
-        --val_files_pattern '/*/eval/*.jsonl' \
-        --train_files_pattern  '/*/train/*.jsonl' \
+        --val_files_pattern '/*/eval/input*.jsonl' \
+        --train_files_pattern  '/*/train/input*.jsonl' \
         --eval_vllm \
         -output
     fi
