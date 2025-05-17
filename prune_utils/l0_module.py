@@ -323,10 +323,7 @@ class L0Module(nn.Module):
         self.sep_warmup_steps = {}
         for pruning_module in self.pruning_modules:
             self.sep_warmup_steps[pruning_module] = self.lagrangian_warmup_steps
-            # if pruning_module in ['head_layer', 'intermediate']:
-            #     self.sep_warmup_steps[pruning_module] = int(self.lagrangian_warmup_steps * 1)
-            # if pruning_module == 'hidden':
-            #     self.sep_warmup_steps[pruning_module] = int(self.lagrangian_warmup_steps * 1)
+
 
         self.sft_steps = l0_module_cfg.sft_steps
         self.device = device
@@ -406,62 +403,6 @@ class L0Module(nn.Module):
             raise NotImplementedError("Instance `{}` does not implement `{}`".format(self, func_name))
         method()
             
-    # def initialize_hidden(self):
-    #     mask_shape = [self.base_model_info.hidden_size]
-    #     num_params_per_mask=self.base_model_info.hidden_size * 4 + self.base_model_info.hidden_size * 4 * 2
-        
-    #     target_hidden_sparsity = None; pd=None; target_mask_size=None; 
-    #     if self.target_model_info is not None:
-    #         target_hidden_sparsity = 1 - self.target_model_info.hidden_size / self.base_model_info.hidden_size
-    #         target_mask_size = self.target_model_info.hidden_size
-    #         pd = {"lambda_1_hidden": torch.nn.Parameter(torch.tensor(0.0, device=self.device)),
-    #               "lambda_2_hidden": torch.nn.Parameter(torch.tensor(0.0, device=self.device))}
-    #         self.lambdas.update(pd)
-        
-    #     hidden_mask = Mask(name="hidden",
-    #                        mask_shape=mask_shape,
-    #                        num_params_per_mask=num_params_per_mask,
-    #                        mask_output_shape=[self.base_model_info.hidden_size],
-    #                        target_sparsity=target_hidden_sparsity,
-    #                        target_mask_size=target_mask_size,
-    #                        device=self.device,
-    #                        eval_target_model=self.eval_target_model,
-    #                        alpha=self.alpha
-    #                        )
-    #     self.masks["hidden"] = hidden_mask
-
-    # def initialize_head(self):
-    #     num_key_value_heads = self.target_model_info.num_key_value_heads
-    #     mask_shape = [self.base_model_info.num_layers, self.base_model_info.num_attention_heads]
-    #     gqa = num_key_value_heads < self.target_model_info.num_attention_heads
-    #     # target model is a GQA-based model
-    #     if gqa:
-    #         len_group = int(self.base_model_info.num_attention_heads / num_key_value_heads)
-    #         assert self.target_model_info.num_attention_heads % num_key_value_heads == 0
-    #         assert self.base_model_info.num_attention_heads % num_key_value_heads == 0
-    #         mask_shape = [self.base_model_info.num_layers, num_key_value_heads, len_group]
-    #     num_params_per_mask = self.base_model_info.params_per_head
-    #     mask_output_shape = [self.base_model_info.num_layers, 1, self.base_model_info.num_attention_heads, 1] 
-        
-    #     target_head_sparsity = None; pd = {} ; target_mask_size=None; 
-    #     if self.target_model_info is not None:
-    #         target_head_sparsity = 1 - self.target_model_info.num_attention_heads / self.base_model_info.num_attention_heads
-    #         target_mask_size = self.target_model_info.num_attention_heads
-    #         if gqa:
-    #             target_mask_size = int(self.target_model_info.num_attention_heads / num_key_value_heads)
-    #         pd = {"lambda_1_head": torch.nn.Parameter(torch.tensor(0.0, device=self.device)),
-    #               "lambda_2_head": torch.nn.Parameter(torch.tensor(0.0, device=self.device))}
-    #         self.lambdas.update(pd)
-    #     head_mask = Mask(name="head",
-    #                      mask_shape=mask_shape,
-    #                      num_params_per_mask=num_params_per_mask,
-    #                      mask_output_shape=mask_output_shape,
-    #                      target_sparsity=target_head_sparsity,
-    #                      target_mask_size=target_mask_size,
-    #                      device=self.device,
-    #                      eval_target_model=self.eval_target_model,
-    #                      alpha=self.alpha)
-    #     self.masks["head"] = head_mask
 
     def initialize_kv_head(self):
         # for MHA->GQA
@@ -548,134 +489,19 @@ class L0Module(nn.Module):
                          alpha=self.alpha)
         self.masks["vo_head_dim"] = vo_head_dim
         
-    # def initialize_head_layer(self):
-    #     mask_shape = [self.base_model_info.num_layers]
-    #     num_params_per_mask=self.base_model_info.params_per_head *  self.base_model_info.num_attention_heads
-    #     mask_output_shape = [self.base_model_info.num_layers] 
-        
-    #     target_head_layer_sparsity = None; pd = {}; target_mask_size=None; 
-    #     if self.target_model_info is not None:
-    #         target_head_layer_sparsity = 1 - self.target_model_info.num_layers / self.base_model_info.num_layers
-    #         target_mask_size = self.target_model_info.num_layers
-    #         pd = {"lambda_1_head_layer": torch.nn.Parameter(torch.tensor(0.0, device=self.device)),
-    #               "lambda_2_head_layer": torch.nn.Parameter(torch.tensor(0.0, device=self.device))}
-    #         self.lambdas.update(pd)
-        
-    #     head_layer_mask = Mask(name="head_layer",
-    #                           mask_shape=mask_shape,
-    #                            num_params_per_mask=num_params_per_mask,
-    #                            mask_output_shape=mask_output_shape,
-    #                            target_sparsity=target_head_layer_sparsity,
-    #                            target_mask_size=target_mask_size,
-    #                            device=self.device,
-    #                            eval_target_model=self.eval_target_model,
-    #                            alpha=self.alpha)
-    #     self.masks["head_layer"] = head_layer_mask
-        
-    # def initialize_intermediate(self):
-    #     mask_shape = [self.base_model_info.num_layers, self.base_model_info.intermediate_size]
-    #     num_params_per_mask=self.base_model_info.params_per_intermediate_dim
-    #     mask_output_shape = [self.base_model_info.num_layers, 1, 1, self.base_model_info.intermediate_size] 
-        
-    #     target_int_sparsity = None; pd = {}; target_mask_size=None; 
-    #     if self.target_model_info is not None:
-    #         target_int_sparsity = 1 - self.target_model_info.intermediate_size / self.base_model_info.intermediate_size
-    #         target_mask_size = self.target_model_info.intermediate_size
-    #         pd = {"lambda_1_intermediate": torch.nn.Parameter(torch.tensor(0.0, device=self.device)),
-    #               "lambda_2_intermediate": torch.nn.Parameter(torch.tensor(0.0, device=self.device))}
-    #         self.lambdas.update(pd)
-        
-    #     int_mask = Mask(name="intermediate",
-    #                     mask_shape=mask_shape,
-    #                     num_params_per_mask=num_params_per_mask,
-    #                     mask_output_shape=mask_output_shape,
-    #                     target_sparsity=target_int_sparsity,
-    #                     target_mask_size=target_mask_size,
-    #                     device=self.device,
-    #                     eval_target_model=self.eval_target_model,
-    #                     alpha=self.alpha)
-    #     self.masks["intermediate"] = int_mask
-
-    # def initialize_mlp(self):
-    #     mask_shape = [self.base_model_info.num_layers]
-    #     num_params_per_mask=self.base_model_info.params_per_mlp_layer
-    #     mask_output_shape = [self.base_model_info.num_layers] 
-        
-    #     target_mlp_sparsity = None; pd = {}; target_mask_size=None; 
-    #     if self.target_model_info is not None:
-    #         target_mlp_sparsity = 1 - self.target_model_info.num_layers / self.base_model_info.num_layers
-    #         target_mask_size = self.target_model_info.num_layers
-    #         pd = {"lambda_1_mlp": torch.nn.Parameter(torch.tensor(0.0, device=self.device)),
-    #               "lambda_2_mlp": torch.nn.Parameter(torch.tensor(0.0, device=self.device))}
-    #         self.lambdas.update(pd)
-        
-    #     mlp_mask = Mask(name="mlp",
-    #                     mask_shape=mask_shape,
-    #                     num_params_per_mask=num_params_per_mask,
-    #                     mask_output_shape=mask_output_shape,
-    #                     target_sparsity=target_mlp_sparsity,
-    #                     target_mask_size=target_mask_size,
-    #                     device=self.device,
-    #                     eval_target_model=self.eval_target_model,
-    #                     alpha=self.alpha)
-    #     self.masks["mlp"] = mlp_mask 
-
-    # def initialize_layer(self):
-    #     mask_shape = [self.base_model_info.num_layers]
-    #     num_params_per_mask=self.base_model_info.params_per_head * self.base_model_info.num_attention_heads + self.base_model_info.params_per_mlp_layer
-    #     mask_output_shape = [self.base_model_info.num_layers] 
-        
-    #     target_layer_sparsity = None; target_mask_size=None;  pd = {}
-    #     if self.target_model_info is not None:
-    #         target_layer_sparsity = 1 - self.target_model_info.num_layers / self.base_model_info.num_layers
-    #         target_mask_size = self.target_model_info.num_layers
-    #         pd = {"lambda_1_layer": torch.nn.Parameter(torch.tensor(0.0, device=self.device)),
-    #               "lambda_2_layer": torch.nn.Parameter(torch.tensor(0.0, device=self.device))}
-    #         self.lambdas.update(pd)
-        
-    #     layer_mask = Mask(name="layer",
-    #                       mask_shape=mask_shape,
-    #                       num_params_per_mask=num_params_per_mask,
-    #                       mask_output_shape=mask_output_shape,
-    #                       target_sparsity=target_layer_sparsity,
-    #                       target_mask_size=target_mask_size,
-    #                       device=self.device,
-    #                       eval_target_model=self.eval_target_model,
-    #                       alpha=self.alpha)
-    #     self.masks["layer"] = layer_mask 
     
     def constrain_parameters(self):
         if 'head_layer' in self.masks:
             self.masks['head_layer'].z_loga.data[:2] = 6 * self.alpha
             self.masks['head_layer'].z_loga.data[-2:] = 6 * self.alpha
-        '''
-        if 'qk_head_dim' in self.masks or 'vo_head_dim' in self.masks:
-            head_dim = self.masks['qk_head_dim'].mask_size
-            target_head_dim = self.masks['qk_head_dim'].target_mask_size
-            assert head_dim % target_head_dim == 0
-            idxs = torch.arange(0, target_head_dim//2, 1) * (head_dim // target_head_dim)
-            idxs = idxs.long()
-            if 'qk_head_dim' in self.masks:
-                self.masks['qk_head_dim'].z_loga.data[..., idxs] = 6 * self.alpha
-                self.masks['qk_head_dim'].z_loga.data[..., idxs + head_dim // 2] = 6 * self.alpha
-            if 'vo_head_dim' in self.masks:
-                self.masks['vo_head_dim'].z_loga.data[..., idxs] = 6 * self.alpha
-                self.masks['vo_head_dim'].z_loga.data[..., idxs + head_dim // 2] = 6 * self.alpha
-        '''
+
         for key in self.masks:
             self.masks[key].constrain_parameters()
 
     def constrain_sparsity(self, pruned_steps):
         for key in self.masks:
             self.masks[key].constrain_sparsity(pruned_steps, self.sep_warmup_steps[key], self.max_prune_steps, self.pre_sparsity[key])
-    # def update_std_temp(self, pruned_steps):
-    #     repair_steps = self.max_prune_steps - self.lagrangian_warmup_steps
-    #     ratio = min((pruned_steps - self.lagrangian_warmup_steps) / repair_steps, 1)
-    #     for key in self.masks:
-    #         d_std = self.masks[key].max_std - self.masks[key].min_std
-    #         d_temp = self.masks[key].max_temperature - self.masks[key].min_temperature
-    #         self.masks[key].std = self.masks[key].max_std - d_std * ratio
-    #         self.masks[key].temperature = self.masks[key].max_temperature - d_temp * ratio
+
 
     def decay_noise(self, pruned_steps):
         ratio = 1 - min(pruned_steps / self.max_prune_steps, 1)

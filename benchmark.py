@@ -9,28 +9,6 @@ from trainers.custom_trainer import *
 from callbacks import PeftCallback, ProcessBarCallback
 
 
-import gc
-def get_paramsgroup(model):
-    no_decay = ['bias', 'LayerNorm.weight']
-
-    params = []
-    warmup_params = []
-    for name, param in model.named_parameters():
-        # if id(param) in frozen_params:
-        #     continue
-        lr = CONFIG['learning_rate']
-        weight_decay = 0
-
-        if not any(nd in name for nd in no_decay):
-            weight_decay = 1e-4
-        params.append(
-            {
-                'params': param,
-                'lr': lr,
-                'weight_decay': weight_decay
-            }
-        )
-    return params
 
 def log2file(args, msg:str):
     if args.output_predict:
@@ -123,7 +101,6 @@ def train(args, model, trainset, evalset):
         stage=args.stage,
         enable_hybrid_engine=False,
         inference_tp_size=CONFIG['world_size'],
-        # use_qat=args.moq,
         max_out_tokens=2048
         )
 
@@ -189,13 +166,6 @@ def evaluate(args, model, evalset, all_metrics, training_flags=False):
         model = torch.compile(model)
     
     world_size = int(os.environ.get("WORLD_SIZE", 1))
-    # ds_quant_config = deepspeed.inference.config.QuantizationConfig()
-    # ds_quant_config.enabled = True
-    # ds_quant_config.activation.q_groups = 1
-    # ds_quant_config.activation.q_type = 'asymmetric'
-    # ds_quant_config.activation.num_bits = 16
-    # ds_quant_config.weight.num_bits = 8
-    # ds_quant_config.weight.q_type = 'asymmetric'
 
     ds_config = {
         "replace_with_kernel_inject": True,
@@ -203,7 +173,6 @@ def evaluate(args, model, evalset, all_metrics, training_flags=False):
             "enabled": True,
             "tp_size": world_size
         },
-        # "quant": ds_quant_config
     }
     if args.deepspeed and not training_flags:
         ds_engine = deepspeed.init_inference(
@@ -279,23 +248,12 @@ def evaluate(args, model, evalset, all_metrics, training_flags=False):
 
 def vllm_eval(args):
     
-    if args.vllm_quant == "8":
-        quantization = "MixQ8bit"
-    elif args.vllm_quant == "4":
-        quantization = "MixQ4bit"    
-    elif args.vllm_quant == "awq":
-        quantization = "AWQ"
-    elif args.vllm_quant == 'bnb':
-        quantization = 'bitsandbytes'
-    else:
-        quantization = None
-    print0('quant:', quantization, args.vllm_quant)
     import vllm
     llm = vllm.LLM(
         args.model_path, 
         trust_remote_code=True,
         tensor_parallel_size=args.num_gpus,
-        quantization=quantization,
+        quantization=None,
         enable_chunked_prefill=False,
         # kv_cache_dtype="fp8",
         )
@@ -401,19 +359,7 @@ def main(args):
         tokenizer.eos_token_id = 2
         tokenizer.pad_token_id = 0
         tokenizer.unk_token_id = 0
-    if args.tokenizer_name in ['chatglm', 'internlm2']:
-        tokenizer.bos_token_id = 1
-        tokenizer.eos_token_id = 2
-        tokenizer.pad_token_id = 2
-        tokenizer.unk_token_id = 0
-    if args.tokenizer_name == 'bloom':
-        tokenizer.bos_token_id = 1
-        tokenizer.eos_token_id = 2
-        tokenizer.pad_token_id = 3
-        tokenizer.unk_token_id = 0
-    if args.tokenizer_name in ['phi', 'smollm2']:
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.pad_token_id = tokenizer.eos_token_id
+
     print0('bos token id {} eos token id {} pad token id {}'.format(
         tokenizer.bos_token_id,
         tokenizer.eos_token_id,
@@ -444,16 +390,7 @@ def main(args):
                                             attn_implementation=args.attn_implementation,
                                             torch_dtype=torch.bfloat16 if args.bf16 else torch.float16
                                             )
-        # try:
-        #     from liger_kernel.transformers import apply_liger_kernel_to_llama, apply_liger_kernel_to_qwen2
-        #     if model.config.model_type == 'llama':
-        #         apply_liger_kernel_to_llama()
-        #         print('using liger kernel for llama...')
-        #     if model.config.model_type == 'qwen2':
-        #         apply_liger_kernel_to_qwen2()
-        #         print('using liger kernel for qwen2...')
-        # except Exception as e:
-        #     print(e)
+
         if args.gradient_checkpointing:
             model.gradient_checkpointing_enable()
     # if model.get_input_embeddings().weight.size(0) != len(tokenizer):
@@ -588,8 +525,6 @@ if __name__ == '__main__':
     parser.add_argument('-output_file', '--output_file',default="output.log")
     parser.add_argument('--attn_implementation', '-attn_impl', default='flash_attention_2')
     parser.add_argument('-num_gpus', '--num_gpus', type=int, default=8)
-    parser.add_argument('-dora', '--dora', action='store_true',default= False)
-    parser.add_argument('-moq', '--moq', action='store_true',default= False)
     parser.add_argument('-it', '--instruct_tuning', action='store_true',default=False)
     parser.add_argument('-fp16', '--fp16', action='store_true',default=False)
     parser.add_argument('-bf16', '--bf16', action='store_true',default=False)
@@ -606,7 +541,6 @@ if __name__ == '__main__':
                         default=False, help='test the target model on downstream task')
     parser.add_argument('-vllm', '--eval_vllm', action='store_true', \
                         default=False, help='test the target model via vllm')
-    parser.add_argument('-quant','--vllm_quant',type=str, help='quant mode in vllm', default='none')
     set_random_seed(19960301)
     args = parser.parse_args()
     os.makedirs(args.output_dir, exist_ok=True)

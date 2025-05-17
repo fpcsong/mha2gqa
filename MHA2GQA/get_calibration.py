@@ -8,6 +8,7 @@ from transformers.modeling_flash_attention_utils import FlashAttentionKwargs
 from transformers import LlamaConfig, LlamaModel,LlamaTokenizer
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer,LlamaAttention, LlamaRMSNorm, LlamaRotaryEmbedding
 import torch
+import os
 from torch.utils.data import DataLoader
 
 class CustomLlamaAttention(LlamaAttention):
@@ -83,6 +84,13 @@ class CustomLlamaModel(LlamaModel):
         self.post_init()
 
 def main(args):
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+        print(f"{args.save_path} is created")
+    else:
+        print(f"{args.save_path} already exists")
+    
+    
     tokenizer=LlamaTokenizer.from_pretrained(args.model_path)
     tokenizer.deprecation_warnings["Asking-to-pad-a-fast-tokenizer"] = True
 
@@ -97,55 +105,53 @@ def main(args):
 
     model = CustomLlamaModel.from_pretrained(
                             args.model_path,
-                            torch_dtype=torch.bfloat16,  # 使用半精度减少内存占用
-                            device_map=None,       # 自动分配设备（GPU/CPU）
+                            torch_dtype=torch.bfloat16,
+                            device_map=None, 
                             save_path=args.save_path,
                             calibration_max_length=args.calibration_max_length
                         )
-    # if torch.cuda.device_count() > 1:
-    #     model = torch.nn.DataParallel(model)
     
-    model=model.to('cuda:0')
+    model=model.to(args.device)
     model=model.to(model_dtype)
 
     
     def filter_long_text(example):
-        # 对文本进行分词，返回 token 数量
+
         tokenized_length = len(tokenizer(example["text"], truncation=False)["input_ids"])
-        # 保留分词后长度大于 2048 的数据
+
         return tokenized_length >= 2048
 
     
     dataset = load_dataset("json", data_files=args.dataset_path,split='train')
     dataset = dataset.filter(filter_long_text)
-    # 选择前 128 行
+
     dataset = dataset.select(range(128))
 
-    # 3. 数据预处理
+
     texts = [example["text"] for example in dataset]
     dataloader = DataLoader(texts,batch_size=args.batch_size)
     for batch_texts in dataloader:
         inputs = tokenizer(
             batch_texts,
             max_length=2048,
-            truncation=True,           # 截断超过长度的文本
-            padding="max_length",      # 填充到最大长度
-            return_tensors="pt"        # 返回PyTorch张量
-        ).to('cuda:0')         # 将输入移动到模型所在设备
+            truncation=True,
+            padding="max_length",
+            return_tensors="pt"
+        ).to(args.device)  
 
-        # 4. 前向传播
+
         with torch.no_grad():
             outputs = model(**inputs)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='train/eval a model')
-    # parser.add_argument('-bsz', '--batch_size', type=int, \
-    #                     default=CONFIG['batch_size'], help='global batch size')
+    parser = argparse.ArgumentParser(description='calibrate a model')
+
     parser.add_argument('-bf16', '--bf16', type=bool,default=True)
     parser.add_argument('--model_path', type=str,default='/workspace/Sheared-LLaMA-1.3B')
     parser.add_argument('--dataset_path', type=str,default='benchmarking/c4-train.00000-of-01024.jsonl')
     parser.add_argument('--save_path', type=str,default='/workspace/calibration_data')   
     parser.add_argument('--batch_size', type=int,default=8)
+    parser.add_argument('--device', type=str,default='cuda:0')
     parser.add_argument('--calibration_max_length', type=int,default=128)
     
     args = parser.parse_args()

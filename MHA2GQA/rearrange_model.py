@@ -338,14 +338,14 @@ def rearrange_model(model_class,num_group,new_model_path,order_file=None):
     print("matrix transformation ends!")
 
 parser = argparse.ArgumentParser(description='model transformation')
-parser.add_argument('--model_name', type=str, default='LLaMA-1.3B', help='original model path')
+parser.add_argument('--model_base', type=str, default='LLaMA-1.3B', help='base model name')
 parser.add_argument('--model_path', type=str, default='/workspace/Sheared-LLaMA-1.3B', help='original model path')
 parser.add_argument('--calibration_data_path', type=str, default='/workspace/mha2gqa/calibration_data', help='original model path')
 parser.add_argument('--output_model_path', type=str, default='/workspace',help='output model path')
 parser.add_argument('--group_criterion', type=str, default='dist', help='dist or cos')
 parser.add_argument('--group_num', type=int, default=8, help='group number of GQA')
 parser.add_argument('--item', type=str,default='value', help='key, value or none')
-parser.add_argument('--order_file', type=str,help='if you already have an order file')
+parser.add_argument('--order_file', type=str,default=None, help='if you already have an order file')
 args = parser.parse_args()
 
 standard=args.group_criterion#'cos'# ''dist'#
@@ -353,13 +353,13 @@ group=args.group_num  #'8'#'16'#
 order_file=args.order_file
 item=args.item #'value'#'none'# or 'key'#
 
-model_name = args.model_path #"/mnt/data/JinQingyun/models/llama-2-7b-hf"
-new_model_path=args.output_model_path+"/"+args.model_name+"-groups-"+str(group)+'-'+standard+'-'+item #"/mnt/data/JinQingyun/models/contrast/llama-2-"+group+"groups-"+standard+'-'+item
+model_path = args.model_path #"/mnt/data/JinQingyun/models/llama-2-7b-hf"
+new_model_path=args.output_model_path+"/"+args.model_base+"-groups"+str(group)+'-'+standard+'-'+item
 
-model = AutoModelForCausalLM.from_pretrained(model_name).to(map_location)
+model = AutoModelForCausalLM.from_pretrained(model_path).to(map_location)
 print(new_model_path)
-rearrange_model(model, int(group), new_model_path,order_file=order_file)#order_file='/mnt/data/JinQingyun/models/deepseek-llm-7b-8groups-orthogonal-value-70032my_list.json')
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+rearrange_model(model, int(group), new_model_path,order_file=order_file)
+tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.save_pretrained(new_model_path)
 
 print('completed.')

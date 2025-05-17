@@ -9,35 +9,13 @@ from fsdp_utils import get_train_fsdp_config
 from trainers.custom_trainer import *
 from callbacks import *
 from prune_utils.composer_deepseek import DeepSeekForL0Prune
-
+from peft import PeftModel
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.wrap import (
     size_based_auto_wrap_policy,
     enable_wrap,
     wrap,
 )
-# from prune_utils.composer_qwen2_ste import Qwen2ForL0Prune
-def get_paramsgroup(model):
-    no_decay = ['bias', 'LayerNorm.weight']
-
-    params = []
-    warmup_params = []
-    for name, param in model.named_parameters():
-        # if id(param) in frozen_params:
-        #     continue
-        lr = CONFIG['learning_rate']
-        weight_decay = 0
-
-        if not any(nd in name for nd in no_decay):
-            weight_decay = 1e-4
-        params.append(
-            {
-                'params': param,
-                'lr': lr,
-                'weight_decay': weight_decay
-            }
-        )
-    return params
 
 def log2file(args, msg:str):
     if args.output_predict:
@@ -120,19 +98,7 @@ def main(args):
         tokenizer.eos_token_id = 2
         tokenizer.pad_token_id = 0
         tokenizer.unk_token_id = 0
-    if args.tokenizer_name in ['chatglm', 'internlm2']:
-        tokenizer.bos_token_id = 1
-        tokenizer.eos_token_id = 2
-        tokenizer.pad_token_id = 2
-        tokenizer.unk_token_id = 0
-    if args.tokenizer_name == 'bloom':
-        tokenizer.bos_token_id = 1
-        tokenizer.eos_token_id = 2
-        tokenizer.pad_token_id = 3
-        tokenizer.unk_token_id = 0
-    if args.tokenizer_name in ['phi', 'smollm2']:
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.pad_token_id = tokenizer.eos_token_id
+
     print0('bos token id {} eos token id {} pad token id {}'.format(
             tokenizer.bos_token_id,
             tokenizer.eos_token_id,
@@ -158,19 +124,16 @@ def main(args):
             if args.max_steps > 0:
                 l0_config.model.l0_module.lagrangian_warmup_steps = int(args.max_steps * args.lagrangian_warmup_ratio)
                 l0_config.model.l0_module.max_prune_steps = int(args.max_steps * args.prune_step_ratio)
-            # if isinstance(model, PeftModel):
-            #     model.base_model.model.init_l0_module(l0_config.model)
-            #     model.base_model.model.model.l0_module.train()
-            #     model.base_model.model.load_l0_parameters(args.model_path)
-            # else:#here
-            model.init_l0_module(l0_config.model)
-            model.model.l0_module.train()
-            model.load_l0_parameters(args.model_path)
+            if isinstance(model, PeftModel):
+                model.base_model.model.init_l0_module(l0_config.model)
+                model.base_model.model.model.l0_module.train()
+                model.base_model.model.load_l0_parameters(args.model_path)
+            else:
+                model.init_l0_module(l0_config.model)
+                model.model.l0_module.train()
+                model.load_l0_parameters(args.model_path)
             model.train()
-            # if 'hidden' in l0_config.model.l0_module.pruning_modules:
-            #     args.do_mid_distil = False
-            #     CONFIG['do_mid_distil'] = False
-            #     print0('setting `do_mid_distil` to False...')
+
             for pruning_module in l0_config.model.l0_module.pruning_modules:
                 model.model.l0_module.masks[pruning_module].temperature = args.lag_temperature
         model = model.to(model_dtype)
@@ -184,16 +147,6 @@ def main(args):
                                     attn_implementation=args.attn_implementation,
                                     torch_dtype=model_dtype
                                     )
-        # try:
-        #     from liger_kernel.transformers import apply_liger_kernel_to_llama, apply_liger_kernel_to_qwen2
-        #     if model.config.model_type == 'llama':
-        #         apply_liger_kernel_to_llama()
-        #         print('using liger kernel for llama...')
-        #     if model.config.model_type == 'qwen2':
-        #         apply_liger_kernel_to_qwen2()
-        #         print('using liger kernel for qwen2...')
-        # except Exception as e:
-        #     print(e)
 
         if args.gradient_checkpointing:
             model.gradient_checkpointing_enable()
@@ -614,7 +567,6 @@ if __name__ == '__main__':
     parser.add_argument('-pack', '--pack', action='store_true',default=False)
     parser.add_argument('-dev', '--dev', action='store_true',default=False)
     parser.add_argument('-no_weight', '--no_weight', action='store_true',default=False)
-    parser.add_argument('-do_mid_distil', '--do_mid_distil', action='store_true',default=False)
     parser.add_argument('-save_pruned', '--save_pruned', action='store_true',default=False)
     parser.add_argument('-encoded_data', '--encoded_data', action='store_true',default=False)
     parser.add_argument('--seed', type=int,default=19960301)

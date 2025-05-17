@@ -286,7 +286,7 @@ class CustomTrainerForDistillationL0Prune(CustomTrainerForL0Prune):
             self.teacher_model_path, 
             trust_remote_code=True,
             torch_dtype=torch.float16,
-            attn_implementation='eager' if self.config['do_mid_distil'] else 'flash_attention_2'
+            attn_implementation=self.config['attn_implementation']
             )
         if self.teacher:
             if self.is_deepspeed_enabled:
@@ -368,7 +368,7 @@ class CustomTrainerForDistillationL0Prune(CustomTrainerForL0Prune):
                 attention_mask=attention_mask,
                 return_dict=True,
                 output_hidden_states=True,
-                output_attentions=True if self.config['do_mid_distil'] else False,
+                output_attentions=False,
                 past_key_values=DynamicCache.from_legacy_cache(None)
             )
         teacher_hidden_states = teacher_outputs.hidden_states
