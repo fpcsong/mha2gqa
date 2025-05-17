@@ -1,6 +1,6 @@
 #! /bin/bash
 
-ROOT_PATH=/input
+ROOT_PATH=/mnt/data/group/songxiaohui
 export HF_HOME=$ROOT_PATH/cache
 export NCCL_DEBUG=WARN
 MODEL=Sota-Sheared-LLaMA-1.3B
@@ -39,7 +39,7 @@ python MHA2GQA/rearrange_model.py --model_path $BASEMODEL --calibration_data_pat
 MODEL_PATH=$3/LLaMA-1.3B-groups-$7-$6-$8
 
 # accelerate launch train.py \
-deepspeed --num_gpus 8 train.py \
+deepspeed --hostfile /etc/mpi/hostfile train.py \
     -it \
     -l0_config $CONFIG \
     -t_data $TRAINDATA \
@@ -50,7 +50,7 @@ deepspeed --num_gpus 8 train.py \
     --teacher_model_path $4 \
     --bf16 \
     -output \
-    -output_dir $5 \
+    -output_dir $OUTDIR \
     -max_len 2048 \
     -m_bsz 1 -e_bsz 4 \
     --loss_type $LOSS_TYPE \

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-ROOT_PATH=/input
+ROOT_PATH=/mnt/data/group/songxiaohui
 export HF_HOME=$ROOT_PATH/cache
 export NCCL_DEBUG=WARN
 MODEL=Sheared-LLaMA-1.3B
@@ -23,19 +23,19 @@ POOL=0.01
 ALPHA=1e-3
 LAGLR=$LR
 TOKENIZER_NAME=llama
-BASEMODEL=/workspace/Sheared-LLaMA-1.3B
-TEACHER=./results/sft/Sheared-LLaMA-1.3B/teachers3epoch/Sheared-LLaMA-1.3B
+BASEMODEL=$ROOT_PATH/models/$MODEL
+TEACHER=$ROOT_PATH/results/jqy/sft/Sheared-LLaMA-1.3B/teachers3epoch/Sheared-LLaMA-1.3B
 BENCHMARK_PATH=./benchmarking/datasets
 TRAINDATA=$BENCHMARK_PATH
 EVALDATA=$BENCHMARK_PATH
 
-OUTDIR=$ROOT_PATH/results/l0prune/distil/$MODEL/$DESC
+OUTDIR=$ROOT_PATH/results/jqy/l0prune/$MODEL/$DESC
 
 mkdir -p $OUTDIR
 
 rm -rf $OUTDIR/*
 # accelerate launch train.py \
-deepspeed --num_gpus 8 train.py \
+deepspeed --hostfile /etc/mpi/hostfile train.py \
     -it \
     -l0_config $CONFIG \
     -t_data $TRAINDATA \

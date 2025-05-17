@@ -8,6 +8,7 @@ from transformers.modeling_flash_attention_utils import FlashAttentionKwargs
 from transformers import LlamaConfig, LlamaModel,LlamaTokenizer
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer,LlamaAttention, LlamaRMSNorm, LlamaRotaryEmbedding
 import torch
+import os
 from torch.utils.data import DataLoader
 
 class CustomLlamaAttention(LlamaAttention):
@@ -149,5 +150,6 @@ if __name__ == '__main__':
     parser.add_argument('--calibration_max_length', type=int,default=128)
     
     args = parser.parse_args()
+    os.makedirs(args.save_path, exist_ok=True)
 
     main(args)

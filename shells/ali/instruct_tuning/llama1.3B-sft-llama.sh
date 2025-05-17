@@ -1,6 +1,6 @@
 #! /bin/bash
 
-ROOT_PATH=/mnt/data/songxiaohui
+ROOT_PATH=/mnt/data/group/songxiaohui
 export HF_HOME=$ROOT_PATH/cache
 
 MODEL='Sheared-LLaMA-1.3B'
@@ -9,16 +9,16 @@ TOKENIZER_NAME='llama'
 DESC='teachers3epoch'
 BSZ=128
 MXTP=3459
-MBSZ=4
-OUTDIR=./results/sft/$MODEL/$DESC
-BASEMODEL=/workspace/Sheared-LLaMA-1.3B
+MBSZ=8
+OUTDIR=$ROOT_PATH/results/jqy/sft/$MODEL/$DESC
+BASEMODEL=$ROOT_PATH/models/$MODEL
 BENCHMARK_PATH=./benchmarking/datasets
 TRAINDATA=$BENCHMARK_PATH
 EVALDATA=$BENCHMARK_PATH
 sudo mkdir -p $OUTDIR
-export NCCL_P2P_DISABLE=1
-export NCCL_IB_DISABLE=1
-deepspeed --num_gpus 8 benchmark.py \
+# export NCCL_P2P_DISABLE=1
+# export NCCL_IB_DISABLE=1
+deepspeed --hostfile /etc/mpi/hostfile benchmark.py \
     -it \
     -t_data $TRAINDATA \
     -v_data $EVALDATA \

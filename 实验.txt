@@ -1,0 +1,88 @@
+*requirements.txt和.deepspeed_env里的配置我改过了，如果还是之前的卡的话用最初版本的master里的配置就行，其他的拉jqy分支里的代码
+
+0.下载sheared-Llama1.3B（不需要梯子）
+    git clone https://hf-mirror.com/princeton-nlp/Sheared-LLaMA-1.3B
+
+1.训练teacher （1.3B需要3个epoch，学习率不动）大约需要1-2h
+   改shells/ali/instruct_tuning/llama1.3B-sft-llama.sh中 line14 BASEMODEL换成1.3B模型路径     line13 outdir也可以改一下
+   改shells/ali/eval/eval_prune-llama1.3B.sh中 line6 ckpt_path换成训练后模型的路径
+训练   bash shells/ali/instruct_tuning/llama1.3B-sft-llama.sh
+评估   bash shells/ali/eval/eval_prune-llama1.3B.sh
+
+{'task_name': 'boolq', 'metric': 'accuracy', 'result': 2774, 'total': 3270.0, 'acc': 0.8483180428134557}
+{'task_name': 'siqa', 'metric': 'accuracy', 'result': 1394, 'total': 1954.0, 'acc': 0.7134083930399181}
+{'task_name': 'piqa', 'metric': 'accuracy', 'result': 1337, 'total': 1838.0, 'acc': 0.7274211099020674}
+{'task_name': 'hellaswag', 'metric': 'accuracy', 'result': 6860, 'total': 10042.0, 'acc': 0.6831308504282015}
+{'task_name': 'arc-e', 'metric': 'accuracy', 'result': 365, 'total': 570.0, 'acc': 0.6403508771929824}
+{'task_name': 'winogrande', 'metric': 'accuracy', 'result': 904, 'total': 1267.0, 'acc': 0.7134964483030781}
+{'task_name': 'openbookqa', 'metric': 'accuracy', 'result': 296, 'total': 500.0, 'acc': 0.592}
+{'task_name': 'arc-c', 'metric': 'accuracy', 'result': 159, 'total': 299.0, 'acc': 0.5317725752508361}
+0.7137284701114488
+
+2.得到所有attention层的标定数据（标定用的c4已经放在data/目录里）大约需要10min
+   python MHA2GQA/get_calibration.py --model_path [1.3B base模型路径] --save_path [要保存的路径] --batch_size 8(是一次过模型的batch大小，无影响，可以改成别的)
+
+3.开始做所有的消融实验（消融的脚本都放在了ablation文件夹里，对于需要转换的模型，这里把转换的步骤和训练写到了一起）
+ 16->8
+  (1组)base模型： bash shells/ali/ablation/distill0prune-eager-llama1.3B.sh  需要改line26,27,32对应的模型路径
+  （6组）转换的实验模型共六组 例：bash shells/ali/ablation/transform-distill0prune-eager-llama1.3B.sh /root/work/models/Sheared-LLaMA-1.3B /mnt/data/group/songxiaohui/results/jqy/sft/Sheared-LLaMA-1.3B/teachers3epoch/calibration/ /root/work/results/jqy/data/input1 /root/work/results/jqy/sft/Sheared-LLaMA-1.3B/teachers3epoch/Sheared-LLaMA-1.3B /root/work/results/jqy/data/input2 dist 8 value
+  参数说明 bash shells/ali/ablation/transform-distill0prune-eager-llama1.3B.sh [base模型路径/workspace/Sheared-LLaMA-1.3B] [标定数据路径/workspace/calibration_data] [转换后模型所在路径/input/data1] [teacher路径results/sft/Sheared-LLaMA-1.3B/teachers3epoch] [output路径/input/data1] dist 8 value（最后三项依次为：dist 8 value|cos 8 value|dist 8 key|cos 8 key|dist 8 none|cos 8 none，共六组）
+ 16->4
+ (1组)base模型： bash shells/ali/ablation/distill0prune-eager-llama1.3B-4groups.sh  需要改line26,27,32对应的模型路径
+
+bash shells/ali/ablation/transform-distill0prune-eager-llama1.3B-4groups.sh /root/work/models/Sheared-LLaMA-1.3B /mnt/data/group/songxiaohui/results/jqy/sft/Sheared-LLaMA-1.3B/teachers3epoch/calibration/ /root/work/results/jqy/data/g4input1 /root/work/results/jqy/sft/Sheared-LLaMA-1.3B/teachers3epoch/Sheared-LLaMA-1.3B /root/work/results/jqy/data/g4input2 dist 4 value
+
+ （6组）转换的实验模型共六组 例：bash shells/ali/ablation/transform-distill0prune-eager-llama1.3B.sh /workspace/Sheared-LLaMA-1.3B /workspace/calibration_data /input/data1 results/sft/Sheared-LLaMA-1.3B/teachers3epoch/Sheared-LLaMA-1.3B /input/data1 dist 4 value
+  参数说明 bash shells/ali/ablation/transform-distill0prune-eager-llama1.3B-4groups.sh [base模型路径/workspace/Sheared-LLaMA-1.3B] [标定数据路径/workspace/calibration_data] [转换后模型所在路径/input/data1] [teacher路径results/sft/Sheared-LLaMA-1.3B/teachers3epoch] [output路径/input/data1] dist 8 value（最后三项依次为：dist 4 value|cos 4 value|dist 4 key|cos 4 key|dist 4 none|cos 4 none，共六组）
+ 
+(1.3B 就不做2组的了，感觉训练时间会很长而且效果可能不稳定)
+
+
+group-4-baseline
+{'task_name': 'boolq', 'metric': 'accuracy', 'result': 2594, 'total': 3270.0, 'acc': 0.7932721712538227}
+{'task_name': 'siqa', 'metric': 'accuracy', 'result': 1305, 'total': 1954.0, 'acc': 0.6678607983623337}
+{'task_name': 'piqa', 'metric': 'accuracy', 'result': 1186, 'total': 1838.0, 'acc': 0.6452665941240479}
+{'task_name': 'hellaswag', 'metric': 'accuracy', 'result': 5063, 'total': 10042.0, 'acc': 0.5041824337781319}
+{'task_name': 'arc-e', 'metric': 'accuracy', 'result': 325, 'total': 570.0, 'acc': 0.5701754385964912}
+{'task_name': 'winogrande', 'metric': 'accuracy', 'result': 895, 'total': 1267.0, 'acc': 0.7063930544593529}
+{'task_name': 'openbookqa', 'metric': 'accuracy', 'result': 274, 'total': 500.0, 'acc': 0.548}
+{'task_name': 'arc-c', 'metric': 'accuracy', 'result': 114, 'total': 299.0, 'acc': 0.38127090301003347}
+0.5955420466058764
+
+LLaMA-1.3B-groups-4-cos-key/groups4/pruned-results.txt 
+{"arc-c": 0.451505016722408, "arc-e": 0.5859649122807018, "boolq": 0.8198776758409786, "hellaswag": 0.5993825931089425, "openbookqa": 0.59, "piqa": 0.6822633297062024, "siqa": 0.6883316274309109, "winogrande": 0.7142857142857143, "z_mean": 0.6569402228976697}
+LLaMA-1.3B-groups-4-cos-none/groups4/pruned-results.txt 
+{"arc-c": 0.4214046822742475, "arc-e": 0.5754385964912281, "boolq": 0.8140672782874617, "hellaswag": 0.5930093606851224, "openbookqa": 0.56, "piqa": 0.6893362350380848, "siqa": 0.6903787103377687, "winogrande": 0.7198105761641673, "z_mean": 0.6524316109422492}
+LLaMA-1.3B-groups-4-cos-value/groups4/pruned-results.txt 
+{"arc-c": 0.47157190635451507, "arc-e": 0.6017543859649123, "boolq": 0.8125382262996942, "hellaswag": 0.6005775741884087, "openbookqa": 0.604, "piqa": 0.6828073993471164, "siqa": 0.6914022517911975, "winogrande": 0.7032359905288083, "z_mean": 0.6570921985815603}
+ LLaMA-1.3B-groups-4-dist-key/groups4/pruned-results.txt 
+{"arc-c": 0.4782608695652174, "arc-e": 0.5754385964912281, "boolq": 0.8149847094801224, "hellaswag": 0.595399322844055, "openbookqa": 0.598, "piqa": 0.6795429815016322, "siqa": 0.6796315250767656, "winogrande": 0.7134964483030781, "z_mean": 0.653242147922999}
+LLaMA-1.3B-groups-4-dist-none/groups4/pruned-results.txt 
+{"arc-c": 0.43812709030100333, "arc-e": 0.5964912280701754, "boolq": 0.8110091743119267, "hellaswag": 0.5947022505476997, "openbookqa": 0.572, "piqa": 0.6920565832426551, "siqa": 0.6888433981576254, "winogrande": 0.7079715864246251, "z_mean": 0.6532928064842959}
+LLaMA-1.3B-groups-4-dist-value/groups4/pruned-results.txt 
+{"arc-c": 0.4682274247491639, "arc-e": 0.6, "boolq": 0.8229357798165138, "hellaswag": 0.5976897032463653, "openbookqa": 0.602, "piqa": 0.676278563656148, "siqa": 0.6914022517911975, "winogrande": 0.7040252565114443, "z_mean": 0.6566362715298886}
+
+
+group-8-baseline
+{'task_name': 'boolq', 'metric': 'accuracy', 'result': 2681, 'total': 3270.0, 'acc': 0.8198776758409786}
+{'task_name': 'siqa', 'metric': 'accuracy', 'result': 1343, 'total': 1954.0, 'acc': 0.687308085977482}
+{'task_name': 'piqa', 'metric': 'accuracy', 'result': 1270, 'total': 1838.0, 'acc': 0.690968443960827}
+{'task_name': 'hellaswag', 'metric': 'accuracy', 'result': 5846, 'total': 10042.0, 'acc': 0.5821549492133041}
+{'task_name': 'arc-e', 'metric': 'accuracy', 'result': 348, 'total': 570.0, 'acc': 0.6105263157894737}
+{'task_name': 'winogrande', 'metric': 'accuracy', 'result': 906, 'total': 1267.0, 'acc': 0.7150749802683505}
+{'task_name': 'openbookqa', 'metric': 'accuracy', 'result': 301, 'total': 500.0, 'acc': 0.602}
+{'task_name': 'arc-c', 'metric': 'accuracy', 'result': 134, 'total': 299.0, 'acc': 0.44816053511705684}
+0.6498986828774063
+
+LLaMA-1.3B-groups-8-cos-key/groups8/pruned-results.txt 
+{"arc-c": 0.46488294314381273, "arc-e": 0.6157894736842106, "boolq": 0.827217125382263, "hellaswag": 0.6241784505078669, "openbookqa": 0.596, "piqa": 0.6974972796517954, "siqa": 0.6867963152507677, "winogrande": 0.7095501183898973, "z_mean": 0.6729483282674772}
+LLaMA-1.3B-groups-8-cos-none/groups8/pruned-results.txt 
+{"arc-c": 0.5050167224080268, "arc-e": 0.6263157894736842, "boolq": 0.8327217125382264, "hellaswag": 0.6360286795459071, "openbookqa": 0.586, "piqa": 0.7094668117519043, "siqa": 0.7052200614124872, "winogrande": 0.7142857142857143, "z_mean": 0.6837892603850051}
+LLaMA-1.3B-groups-8-cos-value/groups8/pruned-results.txt 
+{"arc-c": 0.4983277591973244, "arc-e": 0.6175438596491228, "boolq": 0.8305810397553517, "hellaswag": 0.6363274248157738, "openbookqa": 0.604, "piqa": 0.7034820457018498, "siqa": 0.7031729785056294, "winogrande": 0.7213891081294396, "z_mean": 0.6833839918946302}
+LLaMA-1.3B-groups-8-dist-key/groups8/pruned-results.txt 
+{"arc-c": 0.4080267558528428, "arc-e": 0.5421052631578948, "boolq": 0.8211009174311926, "hellaswag": 0.6260705038836885, "openbookqa": 0.498, "piqa": 0.6534276387377584, "siqa": 0.6622313203684749, "winogrande": 0.6937647987371744, "z_mean": 0.6598784194528875}
+LLaMA-1.3B-groups-8-dist-none/groups8/pruned-results.txt 
+{"arc-c": 0.5050167224080268, "arc-e": 0.6368421052631579, "boolq": 0.8385321100917431, "hellaswag": 0.6354311890061741, "openbookqa": 0.586, "piqa": 0.7110990206746464, "siqa": 0.7103377686796315, "winogrande": 0.7134964483030781, "z_mean": 0.6853596757852077}
+LLaMA-1.3B-groups-8-dist-value/groups8/pruned-results.txt 
+{"arc-c": 0.4682274247491639, "arc-e": 0.6175438596491228, "boolq": 0.8354740061162079, "hellaswag": 0.6354311890061741, "openbookqa": 0.606, "piqa": 0.7121871599564744, "siqa": 0.7057318321392017, "winogrande": 0.7355958958168903, "z_mean": 0.6853090172239108}

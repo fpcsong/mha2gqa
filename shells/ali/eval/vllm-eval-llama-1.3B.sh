@@ -1,9 +1,9 @@
 #! /bin/bash
 
-ROOT_PATH=/mnt/data/songxiaohui
+ROOT_PATH=/mnt/data/group/songxiaohui
 export HF_HOME=$ROOT_PATH/cache
 
-CKPT_PATH=/workspace/mha2gqa/results/sft/Sheared-LLaMA-1.3B/teachers3epoch
+CKPT_PATH=/root/work/results/jqy/sft/Sheared-LLaMA-1.3B/teachers3epoch
 MODEL_NAME=llama
 TOKENIZER_NAME=llama
 QUANT=${4:-'none'}

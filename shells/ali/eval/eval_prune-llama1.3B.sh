@@ -5,8 +5,8 @@ export HF_HOME=$ROOT_PATH/cache
 export NCCL_DEBUG=WARN
 
 MODEL_NAME=llama
-CONFIG=./prune_utils/config/llama2-1.3B-gqa-8groups.yaml
-OUTDIR=/mnt/data/JinQingyun/results/benchmark/l0prune/distil/Sheared-LLaMA-1.3B/groups16
+OUTDIR=$1
+# CONFIG=$2 #./prune_utils/config/llama2-1.3B-gqa-8groups.yaml
 
 BASEMODEL=/workspace/Sheared-LLaMA-1.3B
 TEACHER=$ROOT_PATH/teachers/$MODEL_NAME-benchmark
@@ -18,11 +18,11 @@ for CKPT in $OUTDIR/*
 do
     echo $CKPT
     if [ -f $CKPT/config.json ]; then
-        mkdir -p $CKPT/pruned
-        mkdir -p $CKPT/sft_pruned
-        cp $BASEMODEL/*.py $CKPT/
-        cp $BASEMODEL/*.py $CKPT/pruned/
-        python -m scripts.cvt_prune_weight --model_path $CKPT --model_name $MODEL_NAME --prune_config $CONFIG
+        # mkdir -p $CKPT/pruned
+        # mkdir -p $CKPT/sft_pruned
+        # cp $BASEMODEL/*.py $CKPT/
+        # cp $BASEMODEL/*.py $CKPT/pruned/
+        # python -m scripts.cvt_prune_weight --model_path $CKPT --model_name $MODEL_NAME --prune_config $CONFIG
         
         python benchmark.py -te -v_data $EVALDATA \
         --model_path $CKPT/pruned \
