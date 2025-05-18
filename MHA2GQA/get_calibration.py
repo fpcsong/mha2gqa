@@ -84,12 +84,7 @@ class CustomLlamaModel(LlamaModel):
         self.post_init()
 
 def main(args):
-    if not os.path.exists(args.save_path):
-        os.makedirs(args.save_path)
-        print(f"{args.save_path} is created")
-    else:
-        print(f"{args.save_path} already exists")
-    
+    os.makedirs(args.save_path, exist_ok=True)
     
     tokenizer=LlamaTokenizer.from_pretrained(args.model_path)
     tokenizer.deprecation_warnings["Asking-to-pad-a-fast-tokenizer"] = True
