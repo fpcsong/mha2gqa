@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_name', type=str, required=True,\
                         default='', help='model name')
     parser.add_argument('--prune_config', type=str, \
-                        default='/mnt/data/songxiaohui/llm-workspace/prune_utils/config/deepseek-4b-30layers.yaml', help='')
+                        default='/mnt/data/llm-workspace/prune_utils/config/deepseek-4b-30layers.yaml', help='')
     parser.add_argument('--attn_implementation', '-attn', default='flash_attention_2')
     args = parser.parse_args()
     args_dict = vars(args)

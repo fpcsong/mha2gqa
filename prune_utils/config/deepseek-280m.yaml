@@ -1,5 +1,5 @@
 max_seq_len: 4096
-root_path: /data/songxiaohui/work
+root_path: /data/work
 name : deepseek-llm-7b-base
 model:
   name: ${name}

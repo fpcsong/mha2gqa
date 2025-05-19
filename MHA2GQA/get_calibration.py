@@ -30,28 +30,29 @@ class CustomLlamaAttention(LlamaAttention):
         input_shape = hidden_states.shape[:-1]
         hidden_shape = (*input_shape, -1, self.head_dim)
 
-        key_states = self.k_proj(hidden_states).view(hidden_shape).transpose(1, 2)
-        value_states = self.v_proj(hidden_states).view(hidden_shape).transpose(1, 2)
+        if self.layer_idx==0:
+            key_states = self.k_proj(hidden_states).view(hidden_shape).transpose(1, 2)
+            value_states = self.v_proj(hidden_states).view(hidden_shape).transpose(1, 2)
 
-        if (self.key_data is None) or self.key_data.shape[0]<self.calibration_max_length:
-            if self.key_data is not None:
-                self.key_data=torch.cat((self.key_data, key_states.to('cpu')), dim=0)
-                self.value_data=torch.cat((self.value_data, value_states.to('cpu')), dim=0)
-            else:
-                self.key_data=key_states.to('cpu')
-                self.value_data=value_states.to('cpu')
-            print("layer"+str(self.layer_idx)+" length"+str(self.key_data.shape[0]))
+            if (self.key_data is None) or self.key_data.shape[0]<self.calibration_max_length:
+                if self.key_data is not None:
+                    self.key_data=torch.cat((self.key_data, key_states.to('cpu')), dim=0)
+                    self.value_data=torch.cat((self.value_data, value_states.to('cpu')), dim=0)
+                else:
+                    self.key_data=key_states.to('cpu')
+                    self.value_data=value_states.to('cpu')
+                print("layer"+str(self.layer_idx)+" length"+str(self.key_data.shape[0]))
 
-            if self.key_data.shape[0]>=self.calibration_max_length:
-                head_num=hidden_states.shape[-1]//self.head_dim
-                self.key_data=self.key_data[:self.calibration_max_length]
-                self.value_data=self.value_data[:self.calibration_max_length]
+                if self.key_data.shape[0]>=self.calibration_max_length:
+                    head_num=hidden_states.shape[-1]//self.head_dim
+                    self.key_data=self.key_data[:self.calibration_max_length]
+                    self.value_data=self.value_data[:self.calibration_max_length]
 
-                self.key_data=self.key_data.transpose(0,1).reshape(head_num,-1,self.head_dim)
-                self.value_data=self.value_data.transpose(0,1).reshape(head_num,-1,self.head_dim)
+                    self.key_data=self.key_data.transpose(0,1).reshape(head_num,-1,self.head_dim)
+                    self.value_data=self.value_data.transpose(0,1).reshape(head_num,-1,self.head_dim)
 
-                torch.save(self.key_data, self.save_path+'/layer'+str(self.layer_idx)+'-key.pt')
-                torch.save(self.value_data, self.save_path+'/layer'+str(self.layer_idx)+'-value.pt')
+                    torch.save(self.key_data, self.save_path+'/layer'+str(self.layer_idx)+'-key.pt')
+                    torch.save(self.value_data, self.save_path+'/layer'+str(self.layer_idx)+'-value.pt')
         
         return super().forward(hidden_states,
             position_embeddings,

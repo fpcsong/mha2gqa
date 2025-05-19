@@ -34,7 +34,7 @@ bash shells/sft-llama.sh --base_model_path <Sheared-llama-1.3B path> --train_ste
 bash shells/vllm-eval-llama.sh --checkpoint_path <checkpoint path>
 ```
 
-### 3.2 train GQA baseline
+### 3.2 train and avaluate GQA baseline
 ```bash
 # train llama-7B GQA-16 baseline (train steps equal to 5 epoch)
 bash shells/distill0prune-llama.sh --base_model_path <llama-base-7B path> --prune_config ./prune_utils/config/llama2-7b-gqa-16groups.yaml --teacher_path <SFT teacher path> --train_steps 11530 --batch_size 64 --experiment_name group16 --num_gpus 8
@@ -52,7 +52,7 @@ bash shells/distill0prune-llama.sh --base_model_path <Sheared-llama-1.3B path> -
 bash shells/distill0prune-llama.sh --base_model_path <Sheared-llama-1.3B path> --prune_config ./prune_utils/config/llama2-1.3B-gqa-4groups.yaml --teacher_path <SFT teacher path> --train_steps 27672 --batch_size 64 --experiment_name group4 --num_gpus 8
 ```
 
-### 3.3 train transformed GQA
+### 3.3 train and avaluate transformed GQA
 ```bash
 # transform llama-7B model and prune it to GQA-16 (train steps equal to 5 epoch)
 bash shells/transform-distill0prune-llama.sh --calibration_data_path <the folder to save calibration data> --base_model_path <llama-base-7B path> --save_model_path <the folder to save transformed model> --prune_config ./prune_utils/config/llama2-7b-gqa-16groups.yaml --teacher_path <SFT teacher path> --train_steps 11530 --batch_size 64 --experiment_name group16 --num_gpus 8 --group_num 16 --group_criterion <dist/cos> --item <value/key/none>

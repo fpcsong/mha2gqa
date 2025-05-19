@@ -409,7 +409,7 @@ def test_Shearing_llama_model(model, l0_module, half, ones=False):
 
 if __name__ == "__main__":
     # retest after setting get_full_zs: ones=True 
-    cfg = om.load('/data/songxiaohui/code/llm-workspace/prune_utils/config/deepseek-3b.yaml')
+    cfg = om.load('/data/code/llm-workspace/prune_utils/config/deepseek-3b.yaml')
     cfg.model.l0_module.pruning_modules = ["hidden", "head", "head_layer", "intermediate", "mlp"]
     model = build_composer_model(cfg).cuda()
     l0_module = model.model.l0_module

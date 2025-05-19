@@ -10,10 +10,10 @@ sys.path.append(os.getcwd())
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from prompter import Prompter
 
-datasets_dir='/mnt/data/JinQingyun/llm-workspace-sxh/benchmarking/datasets/'
+datasets_dir='/mnt/data/llm-workspace-sxh/benchmarking/datasets/'
 task='siqa'
-#train_files = '/mnt/data/JinQingyun/llm-workspace-sxh/benchmarking/datasets/openbookqa/train/train-additional.jsonl'#glob.glob(os.path.join(datasets_dir, task+'/train/*.json*'), recursive=True)
-eval_files = '/mnt/data/JinQingyun/llm-workspace-sxh/benchmarking/datasets/mmlu/eval/mmlu.jsonl'#glob.glob(os.path.join(datasets_dir, task+'/eval/*.json*'), recursive=True)
+#train_files = '/mnt/data/llm-workspace-sxh/benchmarking/datasets/openbookqa/train/train-additional.jsonl'#glob.glob(os.path.join(datasets_dir, task+'/train/*.json*'), recursive=True)
+eval_files = '/mnt/data/llm-workspace-sxh/benchmarking/datasets/mmlu/eval/mmlu.jsonl'#glob.glob(os.path.join(datasets_dir, task+'/eval/*.json*'), recursive=True)
 
 
 
@@ -51,7 +51,7 @@ evalset.to_json(
 if task=='a':
 
     # 读取 lst 文件
-    with open('/mnt/data/JinQingyun/llm-workspace-sxh/benchmarking/datasets/siqa/socialiqa-train-dev/dev-labels.lst', 'r') as f:
+    with open('/mnt/data/llm-workspace-sxh/benchmarking/datasets/siqa/socialiqa-train-dev/dev-labels.lst', 'r') as f:
         answers_list = [line.strip() for line in f.readlines()]
 
     # 创建一个映射字典
@@ -63,7 +63,7 @@ if task=='a':
 
     # 读取 jsonl 文件并添加 answer 字段
     new_jsonl_data = []
-    with open('/mnt/data/JinQingyun/llm-workspace-sxh/benchmarking/datasets/siqa/socialiqa-train-dev/dev.jsonl', 'r') as f:
+    with open('/mnt/data/llm-workspace-sxh/benchmarking/datasets/siqa/socialiqa-train-dev/dev.jsonl', 'r') as f:
         for index, line in enumerate(f):
             json_obj = json.loads(line.strip())
             if index < len(answers_list):
@@ -72,7 +72,7 @@ if task=='a':
             new_jsonl_data.append(json_obj)
 
     # 写入新的 jsonl 文件
-    with open('/mnt/data/JinQingyun/llm-workspace-sxh/benchmarking/datasets/siqa/socialiqa-train-dev/formated-dev.jsonl', 'w') as f:
+    with open('/mnt/data/llm-workspace-sxh/benchmarking/datasets/siqa/socialiqa-train-dev/formated-dev.jsonl', 'w') as f:
         for item in new_jsonl_data:
             f.write(json.dumps(item) + '\n')
 

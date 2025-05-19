@@ -63,7 +63,7 @@ def simulated_annealing(matrix, num_group, max_iter, epoch):
     # ax.set_title('max value:'+str(new_list.index(max(new_list))))
     # ax.set_xlabel('X')
     # ax.set_ylabel('Y')
-    # plt.savefig('/mnt/data/JinQingyun/MHA2GQA/line_plot.png')
+    # plt.savefig('/mnt/data/MHA2GQA/line_plot.png')
     ######################################################
     return best_groups, best_score
 
@@ -353,7 +353,7 @@ group=args.group_num  #'8'#'16'#
 order_file=args.order_file
 item=args.item #'value'#'none'# or 'key'#
 
-model_path = args.model_path #"/mnt/data/JinQingyun/models/llama-2-7b-hf"
+model_path = args.model_path 
 new_model_path=args.output_model_path+"/"+args.model_base+"-groups"+str(group)+'-'+standard+'-'+item
 
 model = AutoModelForCausalLM.from_pretrained(model_path).to(map_location)

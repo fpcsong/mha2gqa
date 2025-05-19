@@ -10,7 +10,7 @@ sys.path.append(os.getcwd())
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from prompter import Prompter
 
-datasets_dir='/mnt/data/JinQingyun/llm-workspace-sxh/benchmarking/datasets'
+datasets_dir='/mnt/data/llm-workspace-sxh/benchmarking/datasets'
 
 task_list = os.listdir(datasets_dir)
 print(f'task list: {task_list}')
