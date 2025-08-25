@@ -1,3 +1,5 @@
+# Code for EMNLP 2025 Findings: Align Attention Heads Before Merging Them: An Effective Way for Converting MHA to GQA [[paper](https://openreview.net/pdf?id=1yVXHmPaHF)]
+
 ## 0. Must Read
 1. This code is applicable to standard models with the Llama 2 architecture (DeepSeek V1 shares the same architecture as Llama 2).
 2. All experimental data used in this study have been included in this repository. No need to download again.
